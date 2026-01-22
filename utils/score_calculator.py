@@ -7,7 +7,11 @@ def calculate_scores(file_path):
         if not os.path.exists(file_path):
             return None, "文件不存在"
             
-        df = pd.read_excel(file_path)
+        # 兼容旧版 pandas/xlrd
+        if file_path.endswith('.xlsx'):
+            df = pd.read_excel(file_path, engine='openpyxl')
+        else:
+            df = pd.read_excel(file_path)
     except Exception as e:
         return None, str(e)
 
