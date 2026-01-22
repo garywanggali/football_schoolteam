@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}球员能力分析 - 校园足球队{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+    var chartDom = document.getElementById('radar-chart');
+    var myChart = echarts.init(chartDom);
+    var option;
+
+    var indicators = {{ indicators | tojson }};
+    var allData = {{ chart_data | tojson }};
+
+    function updateChart(index) {
+        var data = allData[index];
+        
+        option = {
+            title: {
+                text: data.name + ' 能力雷达图',
+                left: 'center',
+                textStyle: {
+                    fontSize: 24,
+                    color: '#2c3e50',
+                    fontWeight: 'bold'
+                }
+            },
+            tooltip: {},
+            radar: {
+                indicator: indicators,
+                radius: '65%',
+                axisName: {
+                    color: '#333',
+                    fontSize: 14,
+                    fontWeight: 'bold'
+                },
+                splitArea: {
+                    areaStyle: {
+                        color: ['#f8f9fa', '#ffffff']
+                    }
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            },
+            series: [
+                {
+                    name: '能力值',
+                    type: 'radar',
+                    data: [
+                        {
+                            value: data.value,
+                            name: data.name,
+                            areaStyle: {
+                                color: 'rgba(44, 62, 80, 0.4)'
+                            },
+                            itemStyle: {
+                                color: '#2c3e50'
+                            },
+                            lineStyle: {
+                                color: '#2c3e50',
+                                width: 3
+                            },
+                            label: {
+                                show: true,
+                                formatter: function(params) {
+                                    return params.value;
+                                },
+                                color: '#333'
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+        myChart.setOption(option);
+    }
+
+    // Init with selected player or first player
+    var initialIndex = 0;
+    var urlParams = new URLSearchParams(window.location.search);
+    var playerName = urlParams.get('player_name');
+    
+    if (playerName && allData.length > 0) {
+        var foundIndex = allData.findIndex(function(item) {
+            return item.name === playerName;
+        });
+        if (foundIndex !== -1) {
+            initialIndex = foundIndex;
+        }
+    }
+
+    if (allData.length > 0) {
+        // Set the select box to the correct value
+        document.getElementById('player-select').value = initialIndex;
+        updateChart(initialIndex);
+    } else {
+        document.getElementById('radar-chart').innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted"><p>暂无数据</p></div>';
+    }
+
+    document.getElementById('player-select').addEventListener('change', function(e) {
+        updateChart(e.target.value);
+    });
+
+    window.addEventListener('resize', myChart.resize);
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>球队能力分析看板</h1>
+        <p>数据驱动 · 科学训练</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="card shadow-lg">
+        <div class="card-body p-4">
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-6 text-center">
+                    <label for="player-select" class="form-label fw-bold text-secondary mb-2">选择球员查看详情：</label>
+                    <select id="player-select" class="form-select form-select-lg text-center shadow-sm border-primary">
+                        {% for data in chart_data %}
+                        <option value="{{ loop.index0 }}">{{ data.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div id="radar-chart" style="width: 100%; height: 600px;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

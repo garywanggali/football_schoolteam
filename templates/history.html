@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}球队历史 - 校园足球队{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>球队历史</h1>
+        <p>光辉岁月，薪火相传</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="timeline">
+        {% for event in events %}
+        <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-warning text-dark fs-6 me-2">{{ event['year'] }}</span>
+                        <h5 class="card-title mb-0 fw-bold">里程碑事件</h5>
+                    </div>
+                    <p class="card-text text-muted mb-0 fs-5">{{ event['event'] }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary rounded-pill px-4">
+            <i class="bi bi-house-door me-1"></i> 返回首页
+        </a>
+    </div>
+</div>
+{% endblock %}

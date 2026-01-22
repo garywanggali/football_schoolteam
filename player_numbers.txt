@@ -1,0 +1,22 @@
+# 请在下方直接修改球员号码
+# 格式：名字: 号码
+# 修改完成后保存文件，并告诉我“好了”
+
+Adam: 0
+Arno: 4
+Carl: 9
+Chris: 0
+Eric: 0
+Evan: 0
+Gary: 8
+Harvey: 0
+Jerry: 28
+Larry: 0
+Lucas: 0
+Peter: 0
+Ricky: 0
+Rocky: 0
+Sam: 0
+Sean: 0
+Vuitton: 0
+Young: 10

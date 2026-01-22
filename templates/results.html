@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}近期战绩 - 校园足球队{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>近期战绩</h1>
+        <p>每一场比赛都是成长的见证</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="py-3 ps-4">比赛时间</th>
+                            <th class="py-3">比赛地点</th>
+                            <th class="py-3">对手</th>
+                            <th class="py-3 pe-4 text-center">比分</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td class="ps-4">{{ result['match_date'] }}</td>
+                            <td><i class="bi bi-geo-alt text-danger me-1"></i> {{ result['location'] }}</td>
+                            <td class="fw-bold">{{ result['opponent'] }}</td>
+                            <td class="pe-4 text-center">
+                                <span class="badge rounded-pill bg-primary fs-6 px-3 py-2">
+                                    {{ result['our_score'] }} : {{ result['opponent_score'] }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary rounded-pill px-4">
+            <i class="bi bi-house-door me-1"></i> 返回首页
+        </a>
+    </div>
+</div>
+{% endblock %}

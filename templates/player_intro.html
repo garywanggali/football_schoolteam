@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}队员介绍 - 校园足球队{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>球队队员</h1>
+        <p>我们的阵容，我们的骄傲</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 ps-4" style="width: 100px;">号码</th>
+                            <th class="py-3">名字</th>
+                            <th class="py-3">年龄</th>
+                            <th class="py-3 pe-4 text-end">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in players %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary fs-5">{{ player['number'] }}</td>
+                            <td class="fw-bold">{{ player['name'] }}</td>
+                            <td>{{ player['age'] }} 岁</td>
+                            <td class="pe-4 text-end">
+                                <a href="{{ url_for('analysis', player_name=player['name']) }}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                    查看能力 <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-5">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary rounded-pill px-4">
+            <i class="bi bi-house-door me-1"></i> 返回首页
+        </a>
+    </div>
+</div>
+{% endblock %}
