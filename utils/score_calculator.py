@@ -86,38 +86,33 @@ def calculate_scores(file_path):
             scores['speed'] = 0
             
         # --- 射门 ---
-        # 移动射门
-        move_shot_str = str(row['移动射门 5脚'])
-        move_score = 0
-        if '//' in move_shot_str:
-            try:
-                parts = move_shot_str.split('//')
-                goals = int(parts[0])
-                targets = int(parts[1])
-                # 算法: 进球占70%, 射正占30% (满分100)
-                move_score = (goals / 5) * 70 + (targets / 5) * 30
-            except:
-                pass
-        
-        # 定点射门
-        static_shot_str = str(row['定点射门 5脚'])
-        static_score = 0
-        has_static = False
-        if '//' in static_shot_str:
-             try:
-                parts = static_shot_str.split('//')
-                goals = int(parts[0])
-                targets = int(parts[1])
-                static_score = (goals / 5) * 70 + (targets / 5) * 30
-                has_static = True
-             except:
-                pass
-        
-        if has_static:
-            scores['shooting'] = round((move_score + static_score) / 2, 1)
-        else:
-            scores['shooting'] = round(move_score, 1)
+        # 格式: 进球//射正，共5脚。进球0.7分/脚，射正0.3分/脚
+        def _parse_shot(s):
+            raw = 0
+            if '//' in str(s):
+                try:
+                    parts = str(s).split('//')
+                    goals = min(5, max(0, int(parts[0])))
+                    on_target = min(5, max(0, int(parts[1])))
+                    raw = (goals / 5) * 70 + (on_target / 5) * 30  # 0~100
+                except:
+                    pass
+            return raw
 
+        move_raw = _parse_shot(row['移动射门 5脚'])
+        static_raw = _parse_shot(row['定点射门 5脚'])
+        raw_shooting = (move_raw + static_raw) / 2 if static_raw > 0 else move_raw
+        scores['_raw_shooting'] = raw_shooting
         results[name] = scores
-        
+
+    # 射门按队内最高90分、0分兜底20分、中间按比例
+    raw_list = [s['_raw_shooting'] for s in results.values()]
+    max_raw = max(raw_list) if raw_list else 1
+    for name, s in results.items():
+        r = s.pop('_raw_shooting')
+        if max_raw <= 0:
+            s['shooting'] = 20.0
+        else:
+            s['shooting'] = round(20 + (r / max_raw) * 70, 1)
+
     return results, None

@@ -1,0 +1,74 @@
+[
+  {
+    "name": "Adam",
+    "positions": ["门将"]
+  },
+  {
+    "name": "Arno",
+    "positions": ["中后卫"]
+  },
+  {
+    "name": "Carl",
+    "positions": ["前锋"]
+  },
+  {
+    "name": "Chris",
+    "positions": ["边锋", "边后卫"]
+  },
+  {
+    "name": "Eric",
+    "positions": ["边后卫"]
+  },
+  {
+    "name": "Evan",
+    "positions": ["边后卫", "边锋", "前锋", "中场"]
+  },
+  {
+    "name": "Gary",
+    "positions": ["中场", "中后卫"]
+  },
+  {
+    "name": "Harvey",
+    "positions": ["门将"]
+  },
+  {
+    "name": "Jerry",
+    "positions": ["边后卫"]
+  },
+  {
+    "name": "Larry",
+    "positions": ["边后卫"]
+  },
+  {
+    "name": "Lucas",
+    "positions": ["边后卫", "边锋", "前锋", "中场"]
+  },
+  {
+    "name": "Peter",
+    "positions": ["前锋"]
+  },
+  {
+    "name": "Ricky",
+    "positions": ["中场", "前锋"]
+  },
+  {
+    "name": "Rocky",
+    "positions": ["边后卫"]
+  },
+  {
+    "name": "Sam",
+    "positions": ["边后卫"]
+  },
+  {
+    "name": "Sean",
+    "positions": ["边后卫"]
+  },
+  {
+    "name": "Vuitton",
+    "positions": ["边后卫"]
+  },
+  {
+    "name": "Young",
+    "positions": ["边锋", "中场", "前锋"]
+  }
+]

@@ -1,0 +1,449 @@
+{% extends 'base.html' %}
+
+{% block title %}八人制阵型排布 - 校园足球队（八人制）{% endblock %}
+
+{% block extra_css %}
+<style>
+.formation-field {
+    background: linear-gradient(180deg, #2d5a27 0%, #2d5a27 45%, #2d5a27 55%, #2d5a27 100%);
+    background-size: 100% 12px;
+    background-image: linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px),
+                      linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    position: relative;
+    min-height: 420px;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.2);
+}
+.formation-slot {
+    position: absolute;
+    width: 56px;
+    height: 56px;
+    margin: -28px 0 0 -28px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,255,255,0.6);
+    background: rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.9);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.formation-slot.drag-over { border-color: #f1c40f; background: rgba(241,196,15,0.3); }
+.formation-slot.filled { border-style: solid; border-color: #f1c40f; background: rgba(44,62,80,0.9); }
+.formation-slot .slot-label { font-size: 9px; opacity: 0.8; }
+.player-pool-sidebar {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+.player-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+.player-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); transform: translateY(-1px); }
+.player-card.dragging { opacity: 0.6; cursor: grabbing; }
+.player-card .card-num { font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
+.player-card .card-name { font-weight: 600; color: #1a1a1a; }
+.player-card .card-meta { font-size: 0.75rem; color: #6c757d; margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>八人制阵型排布</h1>
+        <p>选择八人制阵型，将球员拖拽到场上位置</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-3 align-items-start">
+        <!-- 左侧：球员池（窄） -->
+        <div class="col-12 col-md-4 col-lg-3">
+            <div class="player-pool-sidebar sticky-top">
+                <h6 class="text-muted mb-3 small text-uppercase">球员池</h6>
+                <p class="small text-muted mb-2">拖拽到右侧阵型图</p>
+                <div id="player-bench" class="d-grid gap-0">
+                    {% for p in players %}
+                    <div class="player-card" draggable="true" data-id="{{ p['id'] }}" data-name="{{ p['name'] }}" data-number="{{ p['number'] }}" data-position="{{ p.get('position') or '' }}" data-characteristic="{{ p.get('characteristic') or '' }}">
+                        <div><span class="card-num">{{ p['number'] }}</span> <span class="card-name">{{ p['name'] }}</span></div>
+                        <div class="card-meta">位置：{{ p.get('position') or '—' }}{% if p.get('characteristic') %} · {{ p['characteristic'] | truncate(12, True) }}{% endif %}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <!-- 右侧：阵型图 -->
+        <div class="col-12 col-md-8 col-lg-9">
+            <div class="mb-3 d-flex flex-wrap gap-2 align-items-end">
+                <div>
+                    <label class="form-label fw-bold">选择八人制阵型</label>
+                    <select id="formation-select" class="form-select" style="max-width: 12rem;">
+                        <option value="232">2-3-2</option>
+                        <option value="322">3-2-2</option>
+                        <option value="331">3-3-1</option>
+                    </select>
+                </div>
+                <button id="ai-lineup-btn" class="btn btn-warning text-dark fw-bold" type="button">
+                    <i class="bi bi-stars me-1"></i> AI 一键排阵
+                </button>
+                <div class="small text-muted">
+                    {% if ai_enabled %}已检测到 AI 配置{% else %}未检测到 AI Key（需配置 `DEEPSEEK_API_KEY` 或 `SILICONFLOW_API_KEY`）{% endif %}
+                </div>
+            </div>
+            <div id="ai-status" class="alert d-none py-2 px-3" role="alert"></div>
+            <div class="card shadow overflow-hidden">
+                <div class="formation-field p-4" id="formation-field">
+                    <!-- 位置槽由 JS 动态渲染 -->
+                </div>
+            </div>
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-2">赛前对手分析（AI）</h6>
+                    <label for="opponent-info" class="form-label text-muted small">输入对手信息（常用阵型、强点、弱点、核心球员、踢法风格）</label>
+                    <textarea id="opponent-info" class="form-control" rows="4" placeholder="例如：对手常用 3-3-1，边路冲击强，中路回防慢，9号速度快但对抗一般。"></textarea>
+                    <div class="d-flex gap-2 mt-2">
+                        <button id="ai-opponent-btn" class="btn btn-outline-primary" type="button">
+                            <i class="bi bi-lightbulb me-1"></i> 生成赛前建议
+                        </button>
+                    </div>
+                    <div id="opponent-advice-wrap" class="mt-3 d-none">
+                        <div class="small text-muted mb-2" id="opponent-summary"></div>
+                        <div class="mb-2">
+                            <div class="fw-semibold">对手威胁点</div>
+                            <ul id="opponent-threats" class="mb-0"></ul>
+                        </div>
+                        <div class="mb-2">
+                            <div class="fw-semibold">阵容排布建议</div>
+                            <ul id="opponent-lineup-advice" class="mb-0"></ul>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">战术执行建议</div>
+                            <ul id="opponent-tactical-plan" class="mb-0"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var PLAYERS = {{ players | tojson }};
+var AI_ENABLED = {{ ai_enabled | tojson }};
+// 阵型配置：位置标签与坐标 (left%, top%)
+var FORMATIONS = {
+    "232": [
+        { key: "GK", label: "门将", left: 50, top: 8 },
+        { key: "LB", label: "左后卫", left: 30, top: 26 },
+        { key: "RB", label: "右后卫", left: 70, top: 26 },
+        { key: "CM1", label: "左中场", left: 25, top: 50 },
+        { key: "CM2", label: "中场", left: 50, top: 46 },
+        { key: "CM3", label: "右中场", left: 75, top: 50 },
+        { key: "ST1", label: "前锋", left: 40, top: 74 },
+        { key: "ST2", label: "前锋", left: 60, top: 74 }
+    ],
+    "322": [
+        { key: "GK", label: "门将", left: 50, top: 8 },
+        { key: "CB1", label: "左中卫", left: 28, top: 24 },
+        { key: "CB2", label: "中卫", left: 50, top: 20 },
+        { key: "CB3", label: "右中卫", left: 72, top: 24 },
+        { key: "CM1", label: "左中场", left: 38, top: 50 },
+        { key: "CM2", label: "右中场", left: 62, top: 50 },
+        { key: "ST1", label: "前锋", left: 40, top: 74 },
+        { key: "ST2", label: "前锋", left: 60, top: 74 }
+    ],
+    "331": [
+        { key: "GK", label: "门将", left: 50, top: 8 },
+        { key: "CB1", label: "左中卫", left: 28, top: 24 },
+        { key: "CB2", label: "中卫", left: 50, top: 20 },
+        { key: "CB3", label: "右中卫", left: 72, top: 24 },
+        { key: "CM1", label: "左中场", left: 30, top: 52 },
+        { key: "CM2", label: "中场", left: 50, top: 48 },
+        { key: "CM3", label: "右中场", left: 70, top: 52 },
+        { key: "ST", label: "前锋", left: 50, top: 76 }
+    ]
+};
+
+var slotAssignments = {}; // key -> { id, name, number, position?, characteristic? }
+
+function escapeHtml(s) {
+    return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function playerCardHtml(p) {
+    var parts = [];
+    if ((p.position || '').trim()) parts.push('位置：' + (p.position || '').trim());
+    var char = (p.characteristic || '').trim();
+    if (char.length > 12) char = char.substring(0, 11) + '…';
+    if (char) parts.push(char);
+    var meta = parts.join(' · ');
+    return '<div><span class="card-num">' + escapeHtml(p.number || '') + '</span> <span class="card-name">' + escapeHtml(p.name || '') + '</span></div>' +
+        (meta ? '<div class="card-meta">' + escapeHtml(meta) + '</div>' : '');
+}
+
+function renderSlots() {
+    var formation = document.getElementById('formation-select').value;
+    var slots = FORMATIONS[formation] || FORMATIONS["232"];
+    var field = document.getElementById('formation-field');
+    field.innerHTML = '';
+    slots.forEach(function(s) {
+        var a = slotAssignments[s.key];
+        var div = document.createElement('div');
+        div.className = 'formation-slot' + (a ? ' filled' : '');
+        div.style.left = s.left + '%';
+        div.style.top = s.top + '%';
+        div.dataset.key = s.key;
+        div.innerHTML = a
+            ? '<span class="fw-bold">' + escapeHtml(a.number) + '</span><br><span class="slot-label">' + escapeHtml(a.name) + '</span>'
+            : '<span class="slot-label">' + s.label + '</span>';
+        field.appendChild(div);
+    });
+    bindSlotEvents();
+}
+
+function bindSlotEvents() {
+    var slots = document.querySelectorAll('.formation-slot');
+    slots.forEach(function(slot) {
+        slot.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        });
+        slot.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+        slot.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            var data = e.dataTransfer.getData('application/json');
+            if (!data) return;
+            var p = JSON.parse(data);
+            var key = this.dataset.key;
+            var oldEl = document.querySelector('.player-card[data-id="' + p.id + '"]');
+            if (slotAssignments[key] && slotAssignments[key].id === p.id) return;
+            var prevKey = Object.keys(slotAssignments).find(function(k) { return slotAssignments[k].id === p.id; });
+            if (prevKey) {
+                var bench = document.getElementById('player-bench');
+                var prev = slotAssignments[prevKey];
+                var card = document.createElement('div');
+                card.className = 'player-card';
+                card.draggable = true;
+                card.dataset.id = prev.id;
+                card.dataset.name = prev.name;
+                card.dataset.number = prev.number;
+                card.dataset.position = prev.position || '';
+                card.dataset.characteristic = prev.characteristic || '';
+                card.innerHTML = playerCardHtml(prev);
+                bench.appendChild(card);
+                bindChipEvents(card);
+                delete slotAssignments[prevKey];
+            }
+            slotAssignments[key] = p;
+            if (oldEl) oldEl.remove();
+            renderSlots();
+        });
+    });
+}
+
+function bindChipEvents(el) {
+    el.addEventListener('dragstart', function(e) {
+        var card = el.classList.contains('player-card') ? el : el.closest('.player-card');
+        if (card) card.classList.add('dragging');
+        e.dataTransfer.setData('application/json', JSON.stringify({
+            id: parseInt(el.dataset.id),
+            name: el.dataset.name,
+            number: el.dataset.number,
+            position: el.dataset.position || '',
+            characteristic: el.dataset.characteristic || ''
+        }));
+        e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', function(e) {
+        var card = el.classList.contains('player-card') ? el : el.closest('.player-card');
+        if (card) card.classList.remove('dragging');
+    });
+}
+
+document.querySelectorAll('.player-card').forEach(bindChipEvents);
+
+function rebuildBench() {
+    var bench = document.getElementById('player-bench');
+    bench.innerHTML = '';
+    var onField = {};
+    Object.keys(slotAssignments).forEach(function(k) { onField[slotAssignments[k].id] = true; });
+    PLAYERS.forEach(function(p) {
+        if (onField[p.id]) return;
+        var card = document.createElement('div');
+        card.className = 'player-card';
+        card.draggable = true;
+        card.dataset.id = p.id;
+        card.dataset.name = p.name;
+        card.dataset.number = p.number;
+        card.dataset.position = p.position || '';
+        card.dataset.characteristic = p.characteristic || '';
+        card.innerHTML = playerCardHtml({ name: p.name, number: p.number, position: p.position, characteristic: p.characteristic });
+        bench.appendChild(card);
+        bindChipEvents(card);
+    });
+}
+
+function setAiStatus(type, message) {
+    var box = document.getElementById('ai-status');
+    box.className = 'alert py-2 px-3';
+    if (type === 'success') {
+        box.classList.add('alert-success');
+    } else if (type === 'warning') {
+        box.classList.add('alert-warning');
+    } else {
+        box.classList.add('alert-danger');
+    }
+    box.textContent = message;
+}
+
+function applyAiAssignments(items) {
+    var mapById = {};
+    PLAYERS.forEach(function(p) { mapById[p.id] = p; });
+    slotAssignments = {};
+    (items || []).forEach(function(it) {
+        var p = mapById[it.player_id];
+        if (!p || !it.slot_key) return;
+        slotAssignments[it.slot_key] = {
+            id: p.id,
+            name: p.name,
+            number: p.number,
+            position: p.position || '',
+            characteristic: p.characteristic || ''
+        };
+    });
+    rebuildBench();
+    renderSlots();
+}
+
+function requestAiLineup() {
+    var btn = document.getElementById('ai-lineup-btn');
+    var formation = document.getElementById('formation-select').value;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>AI 排阵中...';
+    setAiStatus('warning', 'AI 正在读取球员数据并推荐阵型，请稍候...');
+
+    fetch('/api/formation/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formation: formation })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(payload) {
+        if (!payload || !payload.ok) {
+            throw new Error((payload && payload.error) || 'AI 返回异常');
+        }
+        applyAiAssignments(payload.data.assignments || []);
+        setAiStatus('success', 'AI 排阵完成，可继续手动微调。');
+    })
+    .catch(function(err) {
+        setAiStatus('danger', err.message || 'AI 排阵失败');
+    })
+    .finally(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars me-1"></i> AI 一键排阵';
+    });
+}
+
+function getCurrentAssignments() {
+    var items = [];
+    Object.keys(slotAssignments).forEach(function(k) {
+        var it = slotAssignments[k];
+        if (!it || !it.id) return;
+        items.push({ slot_key: k, player_id: parseInt(it.id) });
+    });
+    return items;
+}
+
+function renderAdviceList(containerId, items) {
+    var ul = document.getElementById(containerId);
+    ul.innerHTML = '';
+    (items || []).forEach(function(t) {
+        var li = document.createElement('li');
+        li.textContent = t;
+        ul.appendChild(li);
+    });
+}
+
+function requestOpponentAdvice() {
+    var btn = document.getElementById('ai-opponent-btn');
+    var formation = document.getElementById('formation-select').value;
+    var opponentInfo = (document.getElementById('opponent-info').value || '').trim();
+    if (!opponentInfo) {
+        setAiStatus('warning', '请先输入对手信息，再生成建议。');
+        return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>生成中...';
+    setAiStatus('warning', 'AI 正在分析对手并生成八人制赛前建议...');
+
+    fetch('/api/formation/opponent_advice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            formation: formation,
+            opponent_info: opponentInfo,
+            current_assignments: getCurrentAssignments()
+        })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(payload) {
+        if (!payload || !payload.ok) {
+            throw new Error((payload && payload.error) || 'AI 返回异常');
+        }
+        var data = payload.data || {};
+        document.getElementById('opponent-advice-wrap').classList.remove('d-none');
+        document.getElementById('opponent-summary').textContent = '总结：' + (data.opponent_summary || '已生成赛前建议。');
+        renderAdviceList('opponent-threats', data.key_threats || []);
+        renderAdviceList('opponent-lineup-advice', data.lineup_advice || []);
+        renderAdviceList('opponent-tactical-plan', data.tactical_plan || []);
+        setAiStatus('success', '赛前建议生成完成。');
+    })
+    .catch(function(err) {
+        setAiStatus('danger', err.message || '生成赛前建议失败');
+    })
+    .finally(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightbulb me-1"></i> 生成赛前建议';
+    });
+}
+
+document.getElementById('formation-select').addEventListener('change', function() {
+    slotAssignments = {};
+    rebuildBench();
+    renderSlots();
+});
+
+document.getElementById('ai-lineup-btn').addEventListener('click', function() {
+    requestAiLineup();
+});
+document.getElementById('ai-opponent-btn').addEventListener('click', function() {
+    requestOpponentAdvice();
+});
+
+if (!AI_ENABLED) {
+    setAiStatus('warning', '当前尚未配置 AI Key，建议在 .env 中设置 DEEPSEEK_API_KEY（默认）或 SILICONFLOW_API_KEY。');
+}
+
+renderSlots();
+</script>
+{% endblock %}

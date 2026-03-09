@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}近期战绩 - 校园足球队{% endblock %}
+{% block title %}近期战绩 - 校园足球队（八人制）{% endblock %}
 
 {% block content %}
 <div class="page-header">
@@ -14,7 +14,7 @@
     <div class="card shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-mobile-cards">
                     <thead class="table-light">
                         <tr>
                             <th class="py-3 ps-4">比赛时间</th>
@@ -26,10 +26,10 @@
                     <tbody>
                         {% for result in results %}
                         <tr>
-                            <td class="ps-4">{{ result['match_date'] }}</td>
-                            <td><i class="bi bi-geo-alt text-danger me-1"></i> {{ result['location'] }}</td>
-                            <td class="fw-bold">{{ result['opponent'] }}</td>
-                            <td class="pe-4 text-center">
+                            <td class="ps-4" data-label="比赛时间">{{ result['match_date'] }}</td>
+                            <td data-label="比赛地点"><i class="bi bi-geo-alt text-danger me-1"></i> {{ result['location'] }}</td>
+                            <td class="fw-bold" data-label="对手">{{ result['opponent'] }}</td>
+                            <td class="pe-4 text-center" data-label="比分">
                                 <span class="badge rounded-pill bg-primary fs-6 px-3 py-2">
                                     {{ result['our_score'] }} : {{ result['opponent_score'] }}
                                 </span>

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}后台管理 - 校园足球队{% endblock %}
+{% block title %}后台管理 - 校园足球队（八人制）{% endblock %}
 
 {% block content %}
 <div class="page-header">
@@ -24,12 +24,12 @@
                 <!-- 添加球员 -->
                 <div class="card shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0 fw-bold border-start border-4 border-warning ps-2">添加球员</h5>
+                        <h5 class="card-title mb-0 fw-bold card-title-accent card-title-warning">添加球员</h5>
                     </div>
                     <div class="card-body">
                         <form method="post">
                             <input type="hidden" name="form_type" value="add_player">
-                            <div class="row g-3">
+                            <div class="row g-3 admin-form">
                                 <div class="col-6">
                                     <label class="form-label">名字</label>
                                     <input type="text" name="name" class="form-control" required>
@@ -53,12 +53,12 @@
                 <!-- 添加战绩 -->
                 <div class="card shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0 fw-bold border-start border-4 border-warning ps-2">添加最近战绩</h5>
+                        <h5 class="card-title mb-0 fw-bold card-title-accent card-title-warning">添加最近战绩</h5>
                     </div>
                     <div class="card-body">
                         <form method="post">
                             <input type="hidden" name="form_type" value="add_result">
-                            <div class="row g-3">
+                            <div class="row g-3 admin-form">
                                 <div class="col-6">
                                     <label class="form-label">比赛时间</label>
                                     <input type="date" name="match_date" class="form-control" required>
@@ -90,12 +90,12 @@
                 <!-- 添加统计 -->
                 <div class="card shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0 fw-bold border-start border-4 border-warning ps-2">添加球员统计</h5>
+                        <h5 class="card-title mb-0 fw-bold card-title-accent card-title-warning">添加球员统计</h5>
                     </div>
                     <div class="card-body">
                         <form method="post">
                             <input type="hidden" name="form_type" value="add_stats">
-                            <div class="row g-3">
+                            <div class="row g-3 admin-form">
                                 <div class="col-6">
                                     <label class="form-label">球员编号</label>
                                     <input type="number" name="player_id" class="form-control" required>
@@ -128,7 +128,7 @@
                  <!-- 添加测试场次 -->
                  <div class="card shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0 fw-bold border-start border-4 border-warning ps-2">添加测试场次</h5>
+                        <h5 class="card-title mb-0 fw-bold card-title-accent card-title-warning">添加测试场次</h5>
                     </div>
                     <div class="card-body">
                         <form method="post">
@@ -141,15 +141,59 @@
                     </div>
                 </div>
 
+                <!-- 编辑球员技术特点 -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0 fw-bold card-title-accent">编辑球员技术特点</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            <input type="hidden" name="form_type" value="update_characteristic">
+                            <div class="row g-3 admin-form">
+                                <div class="col-12">
+                                    <label class="form-label">选择球员</label>
+                                    <select name="player_id" class="form-select" required id="char-player-select">
+                                        <option value="">-- 选择球员 --</option>
+                                        {% for p in players %}
+                                        <option value="{{ p['id'] }}" data-char="{{ p.get('characteristic') or '' }}">{{ p['number'] }} - {{ p['name'] }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">技术特点描述</label>
+                                    <textarea name="characteristic" class="form-control" rows="3" placeholder="如：跑位灵活，擅长远射" id="char-textarea"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100">保存技术特点</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 导入球员位置 -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0 fw-bold card-title-accent">导入球员位置</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-2">从项目根目录 <code>player_position.txt</code> 读取「名字: 位置」并更新数据库（按名字匹配）。</p>
+                        <form method="post">
+                            <input type="hidden" name="form_type" value="import_positions">
+                            <button type="submit" class="btn btn-outline-primary w-100">从 player_position.txt 导入</button>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- 添加技能数据 -->
                 <div class="card shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0 fw-bold border-start border-4 border-warning ps-2">添加技能数据</h5>
+                        <h5 class="card-title mb-0 fw-bold card-title-accent card-title-warning">添加技能数据</h5>
                     </div>
                     <div class="card-body">
                         <form method="post">
                             <input type="hidden" name="form_type" value="add_skill">
-                            <div class="row g-3">
+                            <div class="row g-3 admin-form">
                                 <div class="col-6">
                                     <label class="form-label">球员ID</label>
                                     <input type="number" name="player_id" class="form-control" required>
@@ -200,16 +244,17 @@
                 <!-- 球员列表 -->
                 <div class="card shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0 fw-bold border-start border-4 border-primary ps-2">球员列表</h5>
+                        <h5 class="card-title mb-0 fw-bold card-title-accent">球员列表</h5>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
+                            <table class="table table-hover align-middle mb-0 table-mobile-cards">
                                 <thead class="table-light">
                                     <tr>
                                         <th>ID</th>
                                         <th>号码</th>
                                         <th>名字</th>
+                                        <th>位置</th>
                                         <th>年龄</th>
                                         <th>进球</th>
                                         <th class="text-end pe-4">操作</th>
@@ -218,12 +263,13 @@
                                 <tbody>
                                     {% for player in players %}
                                     <tr>
-                                        <td>{{ player['id'] }}</td>
-                                        <td><span class="badge bg-secondary rounded-pill">{{ player['number'] }}</span></td>
-                                        <td class="fw-bold">{{ player['name'] }}</td>
-                                        <td>{{ player['age'] }}</td>
-                                        <td>{{ player['goals'] }}</td>
-                                        <td class="text-end pe-4">
+                                        <td data-label="ID">{{ player['id'] }}</td>
+                                        <td data-label="号码"><span class="badge bg-secondary rounded-pill">{{ player['number'] }}</span></td>
+                                        <td class="fw-bold" data-label="名字">{{ player['name'] }}</td>
+                                        <td data-label="位置"><span class="badge bg-info text-dark">{{ player.get('position') or '—' }}</span></td>
+                                        <td data-label="年龄">{{ player['age'] }}</td>
+                                        <td data-label="进球">{{ player['goals'] }}</td>
+                                        <td class="text-end pe-4" data-label="">
                                             <a href="{{ url_for('delete_player', player_id=player['id']) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定删除吗？')">
                                                 <i class="bi bi-trash"></i> 删除
                                             </a>
@@ -239,11 +285,11 @@
                 <!-- 战绩列表 -->
                 <div class="card shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <h5 class="card-title mb-0 fw-bold border-start border-4 border-primary ps-2">战绩列表</h5>
+                        <h5 class="card-title mb-0 fw-bold card-title-accent">战绩列表</h5>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
+                            <table class="table table-hover align-middle mb-0 table-mobile-cards">
                                 <thead class="table-light">
                                     <tr>
                                         <th>日期</th>
@@ -255,10 +301,10 @@
                                 <tbody>
                                     {% for result in results %}
                                     <tr>
-                                        <td>{{ result['match_date'] }}</td>
-                                        <td>{{ result['opponent'] }}</td>
-                                        <td><span class="badge bg-primary">{{ result['our_score'] }} : {{ result['opponent_score'] }}</span></td>
-                                        <td class="text-end pe-4">
+                                        <td data-label="日期">{{ result['match_date'] }}</td>
+                                        <td data-label="对手">{{ result['opponent'] }}</td>
+                                        <td data-label="比分"><span class="badge bg-primary">{{ result['our_score'] }} : {{ result['opponent_score'] }}</span></td>
+                                        <td class="text-end pe-4" data-label="">
                                             <a href="{{ url_for('delete_result', result_id=result['id']) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定删除吗？')">
                                                 <i class="bi bi-trash"></i> 删除
                                             </a>
@@ -275,4 +321,13 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('char-player-select').addEventListener('change', function() {
+    var opt = this.options[this.selectedIndex];
+    document.getElementById('char-textarea').value = opt.dataset.char || '';
+});
+</script>
 {% endblock %}

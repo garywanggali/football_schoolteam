@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}球员能力分析 - 校园足球队{% endblock %}
+{% block title %}球员能力分析 - 校园足球队（八人制）{% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
@@ -97,16 +97,27 @@
         }
     }
 
+    function showCharacteristic() {
+        var sel = document.getElementById('player-select');
+        var opt = sel.options[sel.selectedIndex];
+        var char = opt.dataset.char || '';
+        var pos = opt.dataset.position || '';
+        var parts = [];
+        if (pos) parts.push('位置：' + pos);
+        if (char) parts.push('技术特点：' + char);
+        document.getElementById('player-extra').textContent = parts.join('　|　');
+    }
     if (allData.length > 0) {
-        // Set the select box to the correct value
         document.getElementById('player-select').value = initialIndex;
         updateChart(initialIndex);
+        showCharacteristic();
     } else {
         document.getElementById('radar-chart').innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted"><p>暂无数据</p></div>';
     }
 
     document.getElementById('player-select').addEventListener('change', function(e) {
         updateChart(e.target.value);
+        showCharacteristic();
     });
 
     window.addEventListener('resize', myChart.resize);
@@ -129,12 +140,12 @@
                     <label for="player-select" class="form-label fw-bold text-secondary mb-2">选择球员查看详情：</label>
                     <select id="player-select" class="form-select form-select-lg text-center shadow-sm border-primary">
                         {% for data in chart_data %}
-                        <option value="{{ loop.index0 }}">{{ data.name }}</option>
+                        <option value="{{ loop.index0 }}" data-char="{{ data.characteristic | e }}" data-position="{{ data.position | e }}">{{ data.name }}{% if data.position %} ({{ data.position }}){% endif %}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
-            
+            <div id="player-extra" class="text-center text-muted mb-3" style="min-height: 1.5em;"></div>
             <div id="radar-chart" style="width: 100%; height: 600px;"></div>
         </div>
     </div>
